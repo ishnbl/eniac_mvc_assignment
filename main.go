@@ -2,20 +2,25 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/ishnbl/eniac_mvc_assignment/models"
-	"os"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/ishnbl/eniac_mvc_assignment/views"
+	"net/http"
 )
 
 func main() {
-	fmt.Println("Hello, MVC!")
-	db_Str := os.Getenv("DB_STRING")
-	db, err := gorm.Open(postgres.Open(db_Str), &gorm.Config{})
-	if err != nil {
-		fmt.Println(err)
-	}
-	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.Fights{}, &models.Troops{}, &models.Fights{}, &models.Buildings{})
+	r := mux.NewRouter()
+	r.HandleFunc("/register", views.RegisterHandler).Methods("POST")
+	r.HandleFunc("/login", views.LoginHandler).Methods("POST")
 
+	server := &http.Server{
+		Addr:    ":8000",
+		Handler: r,
+	}
+	fmt.Println("Server is running on port 8000")
+	fmt.Println("Hello, MVC!")
+	models.Init_DB()
+	db := models.DB
+	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.BattleReplay{}, &models.Troops{}, &models.Buildings{}, &models.ReplayDefenses{}, &models.ReplayTroops{})
+	server.ListenAndServe()
 }
