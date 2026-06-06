@@ -6,17 +6,6 @@ import (
 	"time"
 )
 
-func jwtSecret() []byte {
-	return []byte("eniac_is_ishaan")
-}
-
-func hmacKeyfunc(token *jwt.Token) (interface{}, error) {
-	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-	}
-	return jwtSecret(), nil
-}
-
 func CreateToken(username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
@@ -24,31 +13,31 @@ func CreateToken(username string) (string, error) {
 			"exp":      time.Now().Add(time.Hour * 24).Unix(),
 		})
 
-	return token.SignedString(jwtSecret())
+	return token.SignedString([]byte("eniac_is_ishaan"))
 }
 
-func VerifyToken(tokenString string) error {
-	token, err := jwt.Parse(tokenString, hmacKeyfunc)
-	if err != nil {
-		return err
-	}
-	if !token.Valid {
-		return fmt.Errorf("invalid token")
-	}
-	return nil
-}
+// func VerifyToken(tokenString string) error {
+// 	token, err := jwt.Parse(tokenString, hmacKeyfunc)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if !token.Valid {
+// 		return fmt.Errorf("invalid token")
+// 	}
+// 	return nil
+// }
 
-func VerifyTokenAndGetUsername(tokenString string) (string, error) {
-	token, err := jwt.Parse(tokenString, hmacKeyfunc)
+func GetUsernameFromToken(tokenString string) (string, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte("eniac_is_ishaan"), nil
+	})
 	if err != nil {
 		return "", err
 	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
+	if !token.Valid {
 		return "", fmt.Errorf("invalid token")
 	}
-
 	username, ok := claims["username"].(string)
 	if !ok {
 		return "", fmt.Errorf("username claim missing")

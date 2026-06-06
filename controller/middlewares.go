@@ -9,7 +9,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		if err := VerifyToken(token); err != nil {
+		if _, err := GetUsernameFromToken(token); err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
