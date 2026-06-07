@@ -16,16 +16,6 @@ func CreateToken(username string) (string, error) {
 	return token.SignedString([]byte("eniac_is_ishaan"))
 }
 
-// func VerifyToken(tokenString string) error {
-// 	token, err := jwt.Parse(tokenString, hmacKeyfunc)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if !token.Valid {
-// 		return fmt.Errorf("invalid token")
-// 	}
-// 	return nil
-// }
 
 func GetUsernameFromToken(tokenString string) (string, error) {
 	claims := jwt.MapClaims{}

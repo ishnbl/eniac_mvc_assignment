@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/ishnbl/eniac_mvc_assignment/controller"
 	"github.com/ishnbl/eniac_mvc_assignment/models"
 	"github.com/ishnbl/eniac_mvc_assignment/views"
-	"net/http"
 )
 
 func main() {
@@ -19,6 +20,7 @@ func main() {
 	protected.HandleFunc("/buildings", views.CreateBuildingsHandler).Methods("POST")
 	protected.HandleFunc("/defenses", views.CreateDefensesHandler).Methods("POST")
 	protected.HandleFunc("/troops", views.CreateTroopsHandler).Methods("POST")
+
 	server := &http.Server{
 		Addr:    ":8000",
 		Handler: r,
@@ -27,6 +29,6 @@ func main() {
 	fmt.Println("Hello, MVC!")
 	models.Init_DB()
 	db := models.DB
-	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.BattleReplay{}, &models.Troops{}, &models.Buildings{}, &models.ReplayDefenses{}, &models.ReplayTroops{})
+	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.VillageDefMapping{}, &models.Troops{}, &models.TroopVillageMapping{}, &models.Buildings{}, &models.BuildingsVillageMapping{}, &models.BattleReplay{}, &models.ReplayDefenses{}, &models.ReplayTroops{})
 	server.ListenAndServe()
 }

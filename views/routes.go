@@ -3,11 +3,12 @@ package views
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/ishnbl/eniac_mvc_assignment/controller"
 	"github.com/ishnbl/eniac_mvc_assignment/models"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/ishnbl/eniac_mvc_assignment/controller"
 	"gorm.io/datatypes"
-	"net/http"
 )
 
 type RegisterResp struct {
@@ -20,7 +21,6 @@ type LoginResp struct {
 	Username string
 	Password string
 }
-
 
 type LoginRet struct {
 	Token string
@@ -52,14 +52,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	village := models.Village{
-		UserID:       user.ID,
-		VillageLevel: 1,
-		Gold:         20,
-		Oil:          50,
-		Money:        5000,
-		FarmLand:     20,
-		Mines:        0,
-		Map:          datatypes.JSON(`{}`),
+		UserID:           user.ID,
+		VillageLevel:     1,
+		Gold:             20,
+		Oil:              50,
+		Money:            5000,
+		FarmLand:         20,
+		Mines:            0,
+		LevelConstraints: datatypes.JSON(`{}`),
 	}
 	result = db.Create(&village)
 	if result.Error != nil {
@@ -92,7 +92,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Password match:", passwordMatch)
 	w.Header().Set("Content-Type", "application/json")
-  w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 	jsonResp, err := json.Marshal(LoginRet{Token: jwtToken})
 	if err != nil {
 		fmt.Fprintf(w, "Error creating JSON response")
@@ -100,11 +100,19 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
-type villageResp struct {
-	Village   models.Village
-	Buildings []models.Buildings
+type returnBuilding struct {
+	X      int
+	Y      int
+	Type   string
+	Level  int
+	Width  int
+	Height int
 }
 
+type villageResp struct {
+	Village   models.Village
+	Buildings []returnBuilding
+}
 
 func VillageHandler(w http.ResponseWriter, r *http.Request) {
 	username, err := controller.GetUsernameFromToken(r.Header.Get("Authorization"))
@@ -118,8 +126,23 @@ func VillageHandler(w http.ResponseWriter, r *http.Request) {
 
 	db.Where(&models.User{Username: username}).First(&user)
 	db.Where(&models.Village{UserID: user.ID}).First(&village)
-	buildings := []models.Buildings{}
-	db.Where(&models.Buildings{VillageID: village.ID}).Find(&buildings)
+	buildingsId := []models.BuildingsVillageMapping{}
+	db.Where(&models.BuildingsVillageMapping{VillageID: village.ID}).Find(&buildingsId)
+	buildings := []returnBuilding{}
+
+	for i := 0; i < len(buildingsId); i++ {
+		var building models.Buildings
+		db.Where(&models.Buildings{ID: buildingsId[i].BuildingsID}).First(&building)
+		buildings = append(buildings, returnBuilding{
+			X:      buildingsId[i].X,
+			Y:      buildingsId[i].Y,
+			Type:   building.Type,
+			Width:  building.Width,
+			Height: building.Height,
+		})
+
+	}
+
 	jsonResp, err := json.Marshal(villageResp{Village: village, Buildings: buildings})
 	if err != nil {
 		fmt.Fprintf(w, "Error creating JSON response")
@@ -130,13 +153,10 @@ func VillageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
-
 type CreateBuildingReq struct {
-	BuildingLevel int
-	X             int
-	Y             int
-	Width         int
-	Height        int
+	X    int
+	Y    int
+	Type string
 }
 
 func CreateBuildingsHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,25 +178,37 @@ func CreateBuildingsHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Invalid Payload")
 		return
 	}
-	building := models.Buildings{
-		VillageID: village.ID,
-		BuildingLevel: payload.BuildingLevel,
-		X: payload.X,
-		Y: payload.Y,
-		Width: payload.Width,
-		Height: payload.Height,
+
+	var buildingType models.Buildings
+	db.Where(&models.Buildings{Type: payload.Type}).First(&buildingType)
+	if buildingType.ID == 0 {
+		fmt.Fprintf(w, "Invalid building type")
+		return
+	}
+	if buildingType.Cost > village.Money {
+		fmt.Fprintf(w, "Not enough money")
+		return
+	}
+	village.Money -= buildingType.Cost
+	building := models.BuildingsVillageMapping{
+		VillageID:   village.ID,
+		BuildingsID: buildingType.ID,
+		X:           payload.X,
+		Y:           payload.Y,
 	}
 
-	buildings := []models.Buildings{}
-	db.Where(&models.Buildings{VillageID: village.ID}).Find(&buildings)
+	buildings := []models.BuildingsVillageMapping{}
+	db.Where(&models.BuildingsVillageMapping{VillageID: village.ID}).Find(&buildings)
 
 	for _, b := range buildings {
-		if (payload.X < b.X + b.Width) && (b.X < payload.X + payload.Width) &&
-			(payload.Y < b.Y + b.Height) && (b.Y < payload.Y + payload.Height) {
+		if (payload.X < b.X+buildingType.Width) && (b.X < payload.X+buildingType.Width) &&
+			(payload.Y < b.Y+buildingType.Height) && (b.Y < payload.Y+buildingType.Height) {
 			fmt.Fprintf(w, "Building overlaps with existing building")
 			return
 		}
 	}
+
+	db.Save(&village)
 	result := db.Create(&building)
 	if result.Error != nil {
 		fmt.Fprintf(w, "Error creating building")
@@ -185,11 +217,9 @@ func CreateBuildingsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Building created successfully")
 }
 
-
 type CreateDefensesReq struct {
-	Type           string
-	DefensivePower int
-	Amount         int
+	Type   string
+	Amount int
 }
 
 func CreateDefensesHandler(w http.ResponseWriter, r *http.Request) {
@@ -212,53 +242,33 @@ func CreateDefensesHandler(w http.ResponseWriter, r *http.Request) {
 	db.Where(&models.User{Username: username}).First(&user)
 	db.Where(&models.Village{UserID: user.ID}).First(&village)
 
-	defense := models.Defenses{
-		VillageID: village.ID,
-		Type: payload.Type,
-		DefensivePower: payload.DefensivePower,
-		Amount: payload.Amount,
+	var defenseType models.Defenses
+
+	db.Where(&models.Defenses{Type: payload.Type}).First(&defenseType)
+
+	if defenseType.ID == 0 {
+		fmt.Fprintf(w, "invalid type")
+		return
 	}
+	defense := models.VillageDefMapping{
+		VillageID:  village.ID,
+		Amount:     payload.Amount,
+		DefensesID: defenseType.ID,
+	}
+
+	if defenseType.Cost > village.Money {
+		fmt.Fprintf(w, "Erroro ")
+		return
+	}
+
+	village.Money = village.Money - defenseType.Cost
 	result := db.Create(&defense)
 	if result.Error != nil {
 		fmt.Fprintf(w, "Error creating defense")
 		return
 	}
 	fmt.Fprintf(w, "CreateDefenses endpoint")
-}
-
-type TroopConstraints struct {
-	Type           string
-	Health         int
-	OffensivePower int
-	Level          int
-	Quantity       int
-	Cost           int
-}
-//abhi ke liye dummy constraints, afterr db reveiw will fetch from table
-var Archer = TroopConstraints{
-	Type: "Archer",
-	Health: 100,
-	OffensivePower: 50,
-	Level: 1,
-	Cost: 10,
-}
-
-var Assasin = TroopConstraints{
-	Type: "Asassin",
-	Health: 150,
-	OffensivePower: 70,
-	Level: 1,
-	Quantity: 5,
-	Cost: 20,
-}
-
-var Cavalry = TroopConstraints{
-	Type: "Cavalry",
-	Health: 200,
-	OffensivePower: 100,
-	Level: 1,
-	Quantity: 3,
-	Cost: 30,
+	db.Save(&village)
 }
 
 type CreateTroopsReq struct {
@@ -286,60 +296,25 @@ func CreateTroopsHandler(w http.ResponseWriter, r *http.Request) {
 	db.Where(&models.User{Username: username}).First(&user)
 	db.Where(&models.Village{UserID: user.ID}).First(&village)
 
-	troop := models.Troops{}
-	if payload.Type == "Archer" {
-	troop = models.Troops{
-		VillageID: village.ID,
-		Type: payload.Type,
-		Health: Archer.Health,
-		OffensivePower: Archer.OffensivePower,
-		Level: Archer.Level,
-		Quantity: payload.Quantity,
-	}
-	}else if payload.Type == "Assasin" {
-	troop = models.Troops{
-		VillageID: village.ID,
-		Type: payload.Type,
-		Health: Assasin.Health,
-		OffensivePower: Assasin.OffensivePower,
-		Level: Assasin.Level,
-		Quantity: payload.Quantity,
-	}}else if payload.Type == "Cavalry" {
-	troop = models.Troops{
-		VillageID: village.ID,
-		Type: Cavalry.Type,
-		Health: Cavalry.Health,
-		OffensivePower: Cavalry.OffensivePower,
-		Level: Cavalry.Level,
-		Quantity: payload.Quantity,
-	}
-}
+	var troopType models.Troops
 
-	if troop.Type == "Archer" {
-		if troop.Quantity * Archer.Cost > village.Money {
-			fmt.Fprintf(w, "Not enough money to create troops")
-			return
-		}
-		village.Money -= troop.Quantity * Archer.Cost
-	}else if troop.Type == "Assasin" {
-		if troop.Quantity * Assasin.Cost > village.Money {
-			fmt.Fprintf(w, "Not enough money to create troops")
-			return
-		}
-		village.Money -= troop.Quantity * Assasin.Cost
-	}else if troop.Type == "Cavalry" {
-		if troop.Quantity * Cavalry.Cost > village.Money {
-			fmt.Fprintf(w, "Not enough money to create troops")
-			return
-		}
-		village.Money -= troop.Quantity * Cavalry.Cost
-	}
-
-	db.Save(&village)
-	result := db.Create(&troop)
-	if result.Error != nil {
-		fmt.Fprintf(w, "Error creating troop")
+	db.Where(&models.Troops{Type: payload.Type}).First(&troopType)
+	if troopType.ID == 0 {
+		fmt.Fprintf(w, "invalid type")
 		return
 	}
-	fmt.Fprintf(w, "CreateTroops endpoint")
+	if troopType.Cost > village.Money {
+		fmt.Fprintf(w, "money isues")
+		return
+	}
+
+	saveTroop := models.TroopVillageMapping{
+		VillageID: village.ID,
+		TroopsID:  troopType.ID,
+		Quantity:  payload.Quantity,
+	}
+
+	db.Create(&saveTroop)
+	village.Money = village.Money - troopType.Cost
+	db.Save(&village)
 }
