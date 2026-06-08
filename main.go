@@ -5,22 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ishnbl/eniac_mvc_assignment/controller"
 	"github.com/ishnbl/eniac_mvc_assignment/models"
 	"github.com/ishnbl/eniac_mvc_assignment/views"
 )
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/register", views.RegisterHandler).Methods("POST")
-	r.HandleFunc("/login", views.LoginHandler).Methods("POST")
-	protected := r.PathPrefix("/api").Subrouter()
-	protected.Use(controller.AuthMiddleware)
-	protected.HandleFunc("/village", views.VillageHandler).Methods("GET")
-	protected.HandleFunc("/buildings", views.CreateBuildingsHandler).Methods("POST")
-	protected.HandleFunc("/defenses", views.CreateDefensesHandler).Methods("POST")
-	protected.HandleFunc("/troops", views.CreateTroopsHandler).Methods("POST")
-
+	views.SetupRoutes(r)
 	server := &http.Server{
 		Addr:    ":8000",
 		Handler: r,
