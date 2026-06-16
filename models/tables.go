@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/datatypes"
+import (
+	"time"
+
+	"gorm.io/datatypes"
+)
 
 type User struct {
 	ID             uint   `gorm:"primaryKey"`
@@ -21,7 +25,7 @@ type Village struct {
 	FarmLand         int
 	Mines            int
 	LevelConstraints datatypes.JSON
-	Buildings        []BuildingsVillageMapping
+	Building         []Building
 	Defenses         []VillageDefMapping
 	Troops           []TroopVillageMapping
 }
@@ -43,14 +47,6 @@ type Troops struct {
 	Capabilities   datatypes.JSON
 	Level          int
 	Cost           int
-}
-
-type Buildings struct {
-	ID     uint `gorm:"primaryKey"`
-	Width  int
-	Height int
-	Type   string `gorm:"uniqueIndex"`
-	Cost   int
 }
 
 type BattleReplay struct {
@@ -100,11 +96,32 @@ type TroopVillageMapping struct {
 	Troops    Troops
 }
 
-type BuildingsVillageMapping struct {
-	ID          uint `gorm:"primaryKey"`
-	VillageID   uint
-	X           int
-	Y           int
-	BuildingsID uint
-	Buildings   Buildings
+type Building struct {
+	ID                uint `gorm:"primaryKey"`
+	X                 int
+	Y                 int
+	BuildingType      string
+	Level             int
+	VillageID         uint
+	ResourceCollected time.Time
+}
+
+type LevelSpecific struct {
+	Level        int `gorm:"primaryKey"`
+	MinVillLevel int
+	UpgCost      int
+	H            int
+	W            int
+}
+
+type ResourceColl struct {
+	Level         int    `gorm:"primaryKey"`
+	Type          string `gorm:"primaryKey"`
+	ResourceYield int
+	TimeRefill    int
+}
+type Storage struct {
+	Level int    `gorm:"primaryKey"`
+	Type  string `gorm:"primaryKey"`
+	Store int
 }

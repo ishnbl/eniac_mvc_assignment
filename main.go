@@ -10,8 +10,10 @@ import (
 )
 
 func main() {
+
 	r := mux.NewRouter()
 	views.SetupRoutes(r)
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	server := &http.Server{
 		Addr:    ":8000",
 		Handler: r,
@@ -20,6 +22,6 @@ func main() {
 	fmt.Println("Hello, MVC!")
 	models.Init_DB()
 	db := models.DB
-	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.VillageDefMapping{}, &models.Troops{}, &models.TroopVillageMapping{}, &models.Buildings{}, &models.BuildingsVillageMapping{}, &models.BattleReplay{}, &models.ReplayDefenses{}, &models.ReplayTroops{})
+	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.VillageDefMapping{}, &models.Troops{}, &models.TroopVillageMapping{}, &models.Building{}, &models.LevelSpecific{}, &models.ResourceColl{}, &models.Storage{}, &models.BattleReplay{}, &models.ReplayDefenses{}, &models.ReplayTroops{})
 	server.ListenAndServe()
 }

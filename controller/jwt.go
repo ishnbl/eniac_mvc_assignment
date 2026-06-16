@@ -2,8 +2,10 @@ package controller
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateToken(username string) (string, error) {
@@ -16,11 +18,10 @@ func CreateToken(username string) (string, error) {
 	return token.SignedString([]byte("eniac_is_ishaan"))
 }
 
-
 func GetUsernameFromToken(tokenString string) (string, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte("eniac_is_ishaan"), nil
+		return []byte("eniac_is_ishaan"), nil
 	})
 	if err != nil {
 		return "", err
@@ -34,4 +35,9 @@ func GetUsernameFromToken(tokenString string) (string, error) {
 	}
 
 	return username, nil
+}
+
+func Hash(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
 }

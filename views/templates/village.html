@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Village - Eniacs Battle World</title>
+
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.11/dist/htmx.min.js" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+  <nav class="nav">
+    <span class="nav-brand">Eniacs Battle World</span>
+    <ul class="nav-links">
+      <li><a href="/web/app/village" class="active">My Village</a></li>
+      <li><a href="/web/app/shop">Shop</a></li>
+      <li><a href="/web/app/battles">Battles</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="resource-bar" id="resource-bar">
+      <div class="resource-item">
+        <span class="resource-icon">&#9733;</span>
+        <span>Level</span>
+        <span class="resource-value">{{.VillageLevel}}</span>
+      </div>
+      <div class="resource-item">
+        <span class="resource-icon">&#176;</span>
+        <span>Gold</span>
+        <span class="resource-value">{{.Gold}}</span>
+      </div>
+      <div class="resource-item">
+        <span class="resource-icon">&#9878;</span>
+        <span>Oil</span>
+        <span class="resource-value">{{.Oil}}</span>
+      </div>
+      <div class="resource-item">
+        <span class="resource-icon">&#164;</span>
+        <span>Money</span>
+        <span class="resource-value">{{.Money}}</span>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Village Overview</h2>
+      <button class="btn btn-primary btn-sm"
+              hx-post="/web/app/upgrade/village"
+              hx-indicator="this"  hx-target="#vill_msg" hx-swap="innerHTML">
+        Upgrade Village ({{.UpgradeCost}} Money)
+      </button>
+    </div>
+
+    <div id="vill_msg" class="mb-3 text-danger"></div>
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <h2>Buildings</h2>
+        <a href="/web/app/shop" class="btn btn-outline btn-sm">Buy Building</a>
+      </div>
+
+      <div class="village-grid">
+        {{range .Buildings}}
+        <div class="village-building"
+             style="left:calc({{.X}} * 60px);top:calc({{.Y}} * 60px);width:calc({{.Width}} * 60px);height:calc({{.Height}} * 60px);"
+             title="{{.Type}} (Lv {{.Level}}) at {{.X}},{{.Y}}">
+          <img class="sprite" src="/static/sprites/{{.Type}}.png" alt="{{.Type}}">
+          <span class="lvl">Lv{{.Level}}</span>
+        </div>
+        {{end}}
+      </div>
+
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Level</th>
+            <th>Position</th>
+            <th>Resources</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Buildings}}
+          <tr>
+            <td>{{.Type}}</td>
+            <td><span class="badge badge-level">Lv {{.Level}}</span></td>
+            <td>({{.X}}, {{.Y}})</td>
+
+            <td>
+              <button class="btn btn-outline btn-sm"
+                      hx-post="/web/app/collect"
+                      hx-vals='{"buildingID": "{{.ID}}"}'
+                      hx-indicator="this"  hx-target="#vill_msg" hx-swap="innerHTML">
+                Collect
+              </button>
+            </td>
+
+            <td>
+              <button class="btn btn-primary btn-sm"
+                      hx-post="/web/app/upgrade/building"
+                      hx-vals='{"buildingID": "{{.ID}}"}'
+                      hx-indicator="this"  hx-target="#vill_msg" hx-swap="innerHTML">
+                Upgrade
+              </button>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <h2>Troops</h2>
+        <a href="/web/app/shop" class="btn btn-outline btn-sm">Buy Troops</a>
+      </div>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Level</th>
+            <th>Quantity</th>
+            <th>Health</th>
+            <th>Attack</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Troops}}
+          <tr>
+            <td>{{.Type}}</td>
+            <td><span class="badge badge-level">Lv {{.Level}}</span></td>
+            <td>{{.Quantity}}</td>
+            <td>{{.Health}}</td>
+            <td>{{.OffensivePower}}</td>
+
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <h2>Defenses</h2>
+        <a href="/web/app/shop" class="btn btn-outline btn-sm">Buy Defenses</a>
+      </div>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Defensive Power</th>
+            <th>Attack Power</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Defenses}}
+          <tr>
+            <td>{{.Type}}</td>
+            <td>{{.Amount}}</td>
+            <td>{{.DefensivePower}}</td>
+            <td>{{.AttackPower}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

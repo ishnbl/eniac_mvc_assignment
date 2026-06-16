@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battle - Eniacs Battle World</title>
+
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.11/dist/htmx.min.js" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+</head>
+<body>
+  <nav class="nav">
+    <span class="nav-brand">Eniacs Battle World</span>
+    <ul class="nav-links">
+      <li><a href="/web/app/village">My Village</a></li>
+      <li><a href="/web/app/shop">Shop</a></li>
+      <li><a href="/web/app/battles" class="active">Battles</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="section-header">
+      <h2>Attack Village #{{.DefVill.ID}}</h2>
+      <a href="/web/app/battles" class="text-muted">&larr; Back to opponents</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Enemy Village</h3>
+        <span class="badge badge-level">Lv {{.DefVill.VillageLevel}}</span>
+      </div>
+
+      <div class="resource-bar">
+        <div class="resource-item"><span>Lootable Gold</span><span class="resource-value">10 Percent of {{.DefVill.Gold}}</span></div>
+        <div class="resource-item"><span>Lootable Oil</span><span class="resource-value">10 percent of {{.DefVill.Oil}}</span></div>
+      </div>
+
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Defense</th>
+            <th>Amount</th>
+            <th>Def Power</th>
+            <th>Atk Power</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .DefDef}}
+          <tr>
+            <td>{{.Type}}</td>
+            <td>{{.Amount}}</td>
+            <td>{{.DefensivePower}}</td>
+            <td>{{.AttackPower}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Your Army</h3>
+      </div>
+
+      <form hx-post="/web/app/fight" hx-target="#bat_msg" hx-swap="innerHTML">
+        <input type="hidden" name="defender_id" value="{{.DefVill.ID}}">
+
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Troop</th>
+              <th>Owned</th>
+              <th>Deploy</th>
+              <th>Skill</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .AtTroop}}
+            <tr>
+              <td>
+                {{.Type}}
+                <span class="badge badge-level">Lv {{.Level}}</span>
+              </td>
+              <td>{{.Quantity}}</td>
+              <td>
+                <input type="number" name="amount" min="0" max="{{.Quantity}}" value="0">
+                <input type="hidden" name="troop_type" value="{{.Type}}">
+                <input type="hidden" name="troop_level" value="{{.Level}}">
+              </td>
+              <td>
+                <select name="skill">
+                  {{range .Skills}}
+                  <option value="{{.CapType}}">{{.CapType}} (x{{.RelativeDamage}})</option>
+                  {{end}}
+                </select>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+
+        <div style="margin-top:20px;">
+          <button type="submit" class="btn btn-danger" style="padding:12px 40px;font-size:1.05rem;">Launch Attack</button>
+        </div>
+      </form>
+
+      <div id="bat_msg"></div>
+    </div>
+  </div>
+</body>
+</html>

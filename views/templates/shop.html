@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop - Eniacs Battle World</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.11/dist/htmx.min.js" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+
+</head>
+<body>
+  <nav class="nav">
+    <span class="nav-brand">Eniacs Battle World</span>
+    <ul class="nav-links">
+      <li><a href="/web/app/village">My Village</a></li>
+      <li><a href="/web/app/shop" class="active">Shop</a></li>
+      <li><a href="/web/app/battles">Battles</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <input type="radio" name="shop-tab" id="tab-troops" class="shop-tab-radio" checked>
+    <input type="radio" name="shop-tab" id="tab-defenses" class="shop-tab-radio">
+    <input type="radio" name="shop-tab" id="tab-buildings" class="shop-tab-radio">
+
+    <div class="shop-tabs">
+      <label for="tab-troops" class="shop-tab">Troops</label>
+      <label for="tab-defenses" class="shop-tab">Defenses</label>
+      <label for="tab-buildings" class="shop-tab">Buildings</label>
+    </div>
+
+    <div id="sh_err" class="mb-2 text-danger"></div>
+
+    <div id="section-troops" class="shop-section active">
+      <div class="shop-grid">
+        {{range .Troops}}
+        <div class="shop-item">
+          <div class="shop-item-name">{{.Type}}</div>
+          <div class="shop-item-type">Level {{.Level}}</div>
+          <div class="shop-item-stats">
+            <span>Health: <strong>{{.Health}}</strong></span>
+            <span>Attack: <strong>{{.OffensivePower}}</strong></span>
+          </div>
+          <div class="shop-item-footer">
+            <span class="shop-item-cost">{{.Cost}} Money</span>
+            <form hx-post="/web/app/buy/troops" hx-target="#sh_err" hx-swap="innerHTML">
+              <input type="hidden" name="troop_type" value="{{.Type}}">
+              <input type="hidden" name="troop_level" value="{{.Level}}">
+              <input type="number" name="quantity" value="1" min="1" style="width:50px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-align:center;">
+              <button type="submit" class="btn btn-primary btn-sm">Buy</button>
+            </form>
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </div>
+
+    <div id="section-defenses" class="shop-section">
+      <div class="shop-grid">
+        {{range .Defenses}}
+        <div class="shop-item">
+          <div class="shop-item-name">{{.Type}}</div>
+          <div class="shop-item-type">Defense Structure</div>
+          <div class="shop-item-stats">
+            <span>Defensive Power: <strong>{{.DefensivePower}}</strong></span>
+            <span>Attack Power: <strong>{{.AttackPower}}</strong></span>
+          </div>
+          <div class="shop-item-footer">
+            <span class="shop-item-cost">{{.Cost}} Money</span>
+            <form hx-post="/web/app/buy/defenses" hx-target="#sh_err" hx-swap="innerHTML">
+              <input type="hidden" name="defense_type" value="{{.Type}}">
+              <input type="number" name="amount" value="1" min="1" style="width:50px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-align:center;">
+              <button type="submit" class="btn btn-primary btn-sm">Buy</button>
+            </form>
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </div>
+
+    <div id="section-buildings" class="shop-section">
+      <div class="shop-grid">
+        {{range .ResBuilds}}
+        <div class="shop-item">
+          <div class="shop-item-name">{{.Type}}</div>
+          <div class="shop-item-type">Building</div>
+          <div class="shop-item-stats">
+            <span>Dimensions: <strong>{{.Width}}x{{.Height}}</strong></span>
+            <span>Cost: <strong>{{.Cost}}</strong></span>
+          </div>
+          <div class="shop-item-footer">
+            <form hx-post="/web/app/buy/buildings" hx-target="#sh_err" hx-swap="innerHTML">
+              <input type="hidden" name="building_type" value="{{.Type}}">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" name="x" placeholder="X" min="0" max="9" required style="width:40px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-align:center;">
+                <input type="number" name="y" placeholder="Y" min="0" max="9" required style="width:40px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-align:center;">
+                <button type="submit" class="btn btn-primary btn-sm">Place</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

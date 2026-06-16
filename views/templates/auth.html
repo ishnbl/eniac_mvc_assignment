@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login / Sign Up - Eniacs Battle World</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.11/dist/htmx.min.js" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1>Eniacs Battle World</h1>
+      <p class="subtitle">Build. Defend. Conquer.</p>
+
+      <div id="au_err" style="margin-bottom: 1rem; text-align: center;"></div>
+
+      <form id="login-form" class="auth-form active"
+            hx-post="/web/login"
+            hx-target="#au_err"
+            hx-swap="innerHTML">
+        <div class="form-group">
+          <label for="lusername">Username</label>
+          <input type="text" id="lusername" name="username" placeholder="Enter your username" required>
+        </div>
+        <div class="form-group">
+          <label for="lpass">Password</label>
+          <input type="password" id="lpass" name="password" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+
+      <form id="signup-form" class="auth-form"
+            hx-post="/web/register"
+            hx-target="#au_err"
+            hx-swap="innerHTML">
+        <div class="form-group">
+          <label for="sname">Name</label>
+          <input type="text" id="sname" name="name" placeholder="Your display name" required>
+        </div>
+        <div class="form-group">
+          <label for="susername">Username</label>
+          <input type="text" id="susername" name="username" placeholder="Choose a username" required>
+        </div>
+        <div class="form-group">
+          <label for="lpass">Password</label>
+          <input type="password" id="lpass" name="password" placeholder="Choose a password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
