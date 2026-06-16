@@ -5,8 +5,6 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: mvc
-    ports:
-      - "5432:5432"
     volumes:
       - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
     healthcheck:
@@ -19,6 +17,8 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      DB_STRING: "host=db user=admin password=secret dbname=mvc port=5432 sslmode=disable"
     depends_on:
       db:
         condition: service_healthy

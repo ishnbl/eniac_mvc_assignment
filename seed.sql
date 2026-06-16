@@ -1,4 +1,113 @@
-TRUNCATE TABLE replay_troops, replay_defenses, battle_replays, buildings, troop_village_mappings, village_def_mappings, troops, defenses, villages, users, level_specifics, resource_colls, storages RESTART IDENTITY CASCADE;
+CREATE TABLE IF NOT EXISTS users (
+  id               BIGSERIAL PRIMARY KEY,
+  username         TEXT UNIQUE NOT NULL,
+  name             TEXT,
+  hashed_password  TEXT,
+  fights_won       INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS villages (
+  id                BIGSERIAL PRIMARY KEY,
+  user_id           BIGINT UNIQUE REFERENCES users(id),
+  village_level     INTEGER DEFAULT 1,
+  gold              INTEGER DEFAULT 0,
+  oil               INTEGER DEFAULT 0,
+  money             INTEGER DEFAULT 0,
+  farm_land         INTEGER DEFAULT 0,
+  mines             INTEGER DEFAULT 0,
+  level_constraints JSONB
+);
+
+CREATE TABLE IF NOT EXISTS defenses (
+  id               BIGSERIAL PRIMARY KEY,
+  type             TEXT UNIQUE NOT NULL,
+  defensive_power  INTEGER DEFAULT 0,
+  capabilities     JSONB,
+  attack_power     INTEGER DEFAULT 0,
+  cost             INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS troops (
+  id               BIGSERIAL PRIMARY KEY,
+  type             TEXT,
+  health           INTEGER DEFAULT 0,
+  offensive_power  INTEGER DEFAULT 0,
+  capabilities     JSONB,
+  level            INTEGER DEFAULT 1,
+  cost             INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS battle_replays (
+  id             BIGSERIAL PRIMARY KEY,
+  attacker_id    BIGINT REFERENCES villages(id),
+  defender_id    BIGINT REFERENCES villages(id),
+  attacker_loot  INTEGER DEFAULT 0,
+  defender_loot  INTEGER DEFAULT 0,
+  winner         BOOLEAN DEFAULT false
+);
+
+CREATE TABLE IF NOT EXISTS replay_defenses (
+  id                BIGSERIAL PRIMARY KEY,
+  attacks_used      INTEGER DEFAULT 0,
+  battle_replay_id  BIGINT REFERENCES battle_replays(id),
+  defenses_id       BIGINT REFERENCES defenses(id),
+  num_deployed      INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS replay_troops (
+  id                  BIGSERIAL PRIMARY KEY,
+  amount_deployed     INTEGER DEFAULT 0,
+  attacks_allocated   INTEGER DEFAULT 0,
+  battle_replay_id    BIGINT REFERENCES battle_replays(id),
+  troops_id           BIGINT REFERENCES troops(id)
+);
+
+CREATE TABLE IF NOT EXISTS village_def_mappings (
+  id           BIGSERIAL PRIMARY KEY,
+  defenses_id  BIGINT REFERENCES defenses(id),
+  amount       INTEGER DEFAULT 0,
+  village_id   BIGINT REFERENCES villages(id)
+);
+
+CREATE TABLE IF NOT EXISTS troop_village_mappings (
+  id          BIGSERIAL PRIMARY KEY,
+  village_id  BIGINT REFERENCES villages(id),
+  troops_id   BIGINT REFERENCES troops(id),
+  quantity    INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS buildings (
+  id                  BIGSERIAL PRIMARY KEY,
+  x                   INTEGER DEFAULT 0,
+  y                   INTEGER DEFAULT 0,
+  building_type       TEXT,
+  level               INTEGER DEFAULT 1,
+  village_id          BIGINT REFERENCES villages(id),
+  resource_collected  TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS level_specifics (
+  level           INTEGER PRIMARY KEY,
+  min_vill_level  INTEGER DEFAULT 1,
+  upg_cost        INTEGER DEFAULT 0,
+  h               INTEGER DEFAULT 1,
+  w               INTEGER DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS resource_colls (
+  level           INTEGER,
+  type            TEXT,
+  resource_yield  INTEGER DEFAULT 0,
+  time_refill     INTEGER DEFAULT 0,
+  PRIMARY KEY (level, type)
+);
+
+CREATE TABLE IF NOT EXISTS storages (
+  level  INTEGER,
+  type   TEXT,
+  store  INTEGER DEFAULT 0,
+  PRIMARY KEY (level, type)
+);
 
 INSERT INTO users (id, username, name, hashed_password, fights_won) VALUES
 (1, 'dragon_lord', 'Aiden Cross',  '$2a$10$a7dJf6zWuFT3zwRJdFYusumESQlqFd5g3eoksCiFk9GGy0SAojL4u', 0),
@@ -95,14 +204,11 @@ INSERT INTO storages (level, type, store) VALUES
 (4, 'Farm', 180000),
 (5, 'Farm', 350000);
 
-SELECT setval('users_id_seq',                    (SELECT MAX(id) FROM users));
-SELECT setval('villages_id_seq',                 (SELECT MAX(id) FROM villages));
-SELECT setval('defenses_id_seq',                 (SELECT MAX(id) FROM defenses));
-SELECT setval('village_def_mappings_id_seq',     (SELECT MAX(id) FROM village_def_mappings));
-SELECT setval('troops_id_seq',                   (SELECT MAX(id) FROM troops));
-SELECT setval('troop_village_mappings_id_seq',   (SELECT MAX(id) FROM troop_village_mappings));
-SELECT setval('buildings_id_seq',                (SELECT MAX(id) FROM buildings));
-SELECT setval('battle_replays_id_seq',           (SELECT MAX(id) FROM battle_replays));
-SELECT setval('replay_defenses_id_seq',          (SELECT MAX(id) FROM replay_defenses));
-SELECT setval('replay_troops_id_seq',            (SELECT MAX(id) FROM replay_troops));
-SELECT setval('level_specifics_level_seq',       (SELECT MAX(level) FROM level_specifics));
+SELECT setval('users_id_seq',                  (SELECT MAX(id) FROM users));
+SELECT setval('villages_id_seq',               (SELECT MAX(id) FROM villages));
+SELECT setval('defenses_id_seq',               (SELECT MAX(id) FROM defenses));
+SELECT setval('village_def_mappings_id_seq',   (SELECT MAX(id) FROM village_def_mappings));
+SELECT setval('troops_id_seq',                 (SELECT MAX(id) FROM troops));
+SELECT setval('troop_village_mappings_id_seq', (SELECT MAX(id) FROM troop_village_mappings));
+SELECT setval('buildings_id_seq',              (SELECT MAX(id) FROM buildings));
+SELECT setval('level_specifics_level_seq',     (SELECT MAX(level) FROM level_specifics));
