@@ -21,7 +21,5 @@ func main() {
 	fmt.Println("Server is running on port 8000")
 	fmt.Println("Hello, MVC!")
 	models.Init_DB()
-	db := models.DB
-	db.AutoMigrate(&models.User{}, &models.Village{}, &models.Defenses{}, &models.VillageDefMapping{}, &models.Troops{}, &models.TroopVillageMapping{}, &models.Building{}, &models.LevelSpecific{}, &models.ResourceColl{}, &models.Storage{}, &models.BattleReplay{}, &models.ReplayDefenses{}, &models.ReplayTroops{})
 	server.ListenAndServe()
 }

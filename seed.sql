@@ -211,4 +211,3 @@ SELECT setval('village_def_mappings_id_seq',   (SELECT MAX(id) FROM village_def_
 SELECT setval('troops_id_seq',                 (SELECT MAX(id) FROM troops));
 SELECT setval('troop_village_mappings_id_seq', (SELECT MAX(id) FROM troop_village_mappings));
 SELECT setval('buildings_id_seq',              (SELECT MAX(id) FROM buildings));
-SELECT setval('level_specifics_level_seq',     (SELECT MAX(level) FROM level_specifics));
