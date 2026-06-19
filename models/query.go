@@ -415,7 +415,7 @@ func CreateBuilding(username string, payloadType string, payloadX int, payloadY 
 		}
 	}
 	if len(buildings_ex) > LCons[village.VillageLevel].MaxBuildings {
-		return false, "building limit reached, upgrade your village"
+		return false, "building limit reached upgrade your village"
 	}
 	village.Money = village.Money - LevData.UpgCost
 	if village.Money < 0 {
@@ -430,6 +430,39 @@ func CreateBuilding(username string, payloadType string, payloadX int, payloadY 
 	}
 	DB.Save(&village)
 	DB.Save(&buildingSave)
+	return true, ""
+}
+
+func MoveBuilding(username string, buildingID uint, newX int, newY int) (bool, string) {
+	var user User
+	var village Village
+
+	DB.Where(&User{Username: username}).First(&user)
+	DB.Where(&Village{UserID: user.ID}).First(&village)
+
+	var building Building
+	DB.Where(&Building{ID: buildingID, VillageID: village.ID}).First(&building)
+	if building.ID == 0 {
+		return false, "building not found"
+	}
+
+	var LevData LevelSpecific
+	DB.Where(&LevelSpecific{Level: building.Level}).First(&LevData)
+
+	buildings := GetBuildings(username)
+	for _, b := range buildings {
+		if b.ID == buildingID {
+			continue
+		}
+		if (newX < b.X+b.Width) && (b.X < newX+LevData.W) &&
+			(newY < b.Y+b.Height) && (b.Y < newY+LevData.H) {
+			return false, "buildings cant overlap"
+		}
+	}
+
+	building.X = newX
+	building.Y = newY
+	DB.Save(&building)
 	return true, ""
 }
 

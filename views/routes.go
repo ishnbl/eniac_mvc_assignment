@@ -24,5 +24,7 @@ func SetupRoutes(r *mux.Router) {
 	front.HandleFunc("/collect", frontend.ExtractHandlerHtmx).Methods("POST")
 	front.HandleFunc("/battle/{villageID}", frontend.DoBattleHandlerHtmx).Methods("GET")
 	front.HandleFunc("/fight", frontend.FightHandlerHtmx).Methods("POST")
+	front.HandleFunc("/move/building", frontend.MoveBuildingPageHandler).Methods("GET")
+	front.HandleFunc("/move/building", frontend.MoveBuildingHandler).Methods("POST")
 
 }

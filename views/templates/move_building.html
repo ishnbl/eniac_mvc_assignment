@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Move Building - Eniacs Battle World</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.11/dist/htmx.min.js" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+</head>
+<body>
+  <nav class="nav">
+    <span class="nav-brand">Eniacs Battle World</span>
+    <ul class="nav-links">
+      <li><a href="/web/app/village" class="active">My Village</a></li>
+      <li><a href="/web/app/shop">Shop</a></li>
+      <li><a href="/web/app/battles">Battles</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="card mb-3">
+      <div class="card-header">
+        <h2>Move Building</h2>
+        <a href="/web/app/village" class="btn btn-outline btn-sm">Back</a>
+      </div>
+
+      <div class="p-3">
+        <p>Moving: <strong>{{.Type}}</strong> (Lv {{.Level}}) &mdash; currently at ({{.X}}, {{.Y}})</p>
+
+        <form hx-post="/web/app/move/building" hx-target="#move_msg" hx-swap="innerHTML">
+          <input type="hidden" name="buildingID" value="{{.ID}}">
+          <div class="mb-3">
+            <label>New X</label>
+            <input type="number" name="x" value="{{.X}}" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label>New Y</label>
+            <input type="number" name="y" value="{{.Y}}" min="0" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Move</button>
+        </form>
+
+        <div id="move_msg" class="mt-3 text-danger"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
