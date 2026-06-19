@@ -76,7 +76,7 @@ func RegisterHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if username == "" || password == "" || name == "" {
-		fmt.Fprintf(w, "empty")
+		fmt.Fprintf(w, "all fields are required, dont leave anything blank")
 		return
 	}
 
@@ -84,7 +84,7 @@ func RegisterHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := controller.Hash(password)
 	if err != nil {
-		fmt.Fprintf(w, "error")
+		fmt.Fprintf(w, "something went wrong")
 		return
 	}
 

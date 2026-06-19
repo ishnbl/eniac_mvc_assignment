@@ -179,25 +179,28 @@ func GetShopBuildings(username string) []RetShopBuilding {
 	return returnBuildings
 }
 
-func UpgradeVillage(username string) bool {
+func UpgradeVillage(username string) (bool, string) {
 	var user User
 	var village Village
 
 	DB.Where(&User{Username: username}).First(&user)
 	DB.Where(&Village{UserID: user.ID}).First(&village)
 
+	if village.VillageLevel > 3 {
+		return false, "village already at max level"
+	}
 	village.Money = village.Money - village.VillageLevel*1000
-	if village.Money < 0 || village.VillageLevel > 3 {
-		return false
+	if village.Money < 0 {
+		return false, "not enough money"
 	}
 	village.VillageLevel++
 	constraintsJSON, _ := json.Marshal(LCons[village.VillageLevel-1])
 	village.LevelConstraints = datatypes.JSON(constraintsJSON)
 	DB.Save(&village)
-	return true
+	return true, ""
 }
 
-func CreateTroop(username string, payloadType string, payloadQuantity int, payloadLevel int) bool {
+func CreateTroop(username string, payloadType string, payloadQuantity int, payloadLevel int) (bool, string) {
 	var user User
 	var village Village
 
@@ -219,10 +222,13 @@ func CreateTroop(username string, payloadType string, payloadQuantity int, paylo
 		}
 	}
 	if troopType.ID == 0 {
-		return false
+		return false, "troop not found"
 	}
-	if troopType.Cost > village.Money || (troptot+payloadQuantity) > barrack*10 {
-		return false
+	if troopType.Cost*payloadQuantity > village.Money {
+		return false, "not enough money"
+	}
+	if (troptot + payloadQuantity) > barrack*10 {
+		return false, "barracks full"
 	}
 
 	saveTroop := TroopVillageMapping{
@@ -234,10 +240,10 @@ func CreateTroop(username string, payloadType string, payloadQuantity int, paylo
 	DB.Create(&saveTroop)
 	village.Money = village.Money - troopType.Cost*payloadQuantity
 	DB.Save(&village)
-	return true
+	return true, ""
 }
 
-func CreateDefense(username string, payloadType string, payloadAmount int) bool {
+func CreateDefense(username string, payloadType string, payloadAmount int) (bool, string) {
 	var user User
 	var village Village
 
@@ -260,28 +266,31 @@ func CreateDefense(username string, payloadType string, payloadAmount int) bool 
 	}
 
 	if defenseType.ID == 0 {
-		return false
+		return false, "defense not found"
 	}
+	if defenseType.Cost*payloadAmount > village.Money {
+		return false, "not enough money"
+	}
+	if (deftot + payloadAmount) > armoury*10 {
+		return false, "armoury full"
+	}
+
 	defense := VillageDefMapping{
 		VillageID:  village.ID,
 		Amount:     payloadAmount,
 		DefensesID: defenseType.ID,
 	}
 
-	if defenseType.Cost > village.Money || (deftot+payloadAmount) > armoury*10 {
-		return false
-	}
-
 	village.Money = village.Money - defenseType.Cost*payloadAmount
 	result := DB.Create(&defense)
 	if result.Error != nil {
-		return false
+		return false, "something went wrong"
 	}
 	DB.Save(&village)
-	return true
+	return true, ""
 }
 
-func ExtractResources(username string, buildingID uint) bool {
+func ExtractResources(username string, buildingID uint) (bool, string) {
 	var user User
 	var village Village
 
@@ -291,13 +300,16 @@ func ExtractResources(username string, buildingID uint) bool {
 	var building Building
 	DB.Where(&Building{ID: buildingID, VillageID: village.ID}).First(&building)
 	if building.ID == 0 {
-		return false
+		return false, "building not found"
 	}
 
 	var resColl ResourceColl
 	DB.Where(&ResourceColl{Level: building.Level, Type: building.BuildingType}).First(&resColl)
-	if resColl.Level == 0 || time.Since(building.ResourceCollected) < time.Duration(resColl.TimeRefill)*time.Second {
-		return false
+	if resColl.Level == 0 {
+		return false, "something went wrong"
+	}
+	if time.Since(building.ResourceCollected) < time.Duration(resColl.TimeRefill)*time.Second {
+		return false, "building not ready yet"
 	}
 
 	if building.BuildingType == "Gold" {
@@ -311,10 +323,10 @@ func ExtractResources(username string, buildingID uint) bool {
 	building.ResourceCollected = time.Now()
 	DB.Save(&building)
 	DB.Save(&village)
-	return true
+	return true, ""
 }
 
-func UpgradeTroop(username string, payloadType string) bool {
+func UpgradeTroop(username string, payloadType string) (bool, string) {
 	var user User
 	var village Village
 
@@ -331,22 +343,22 @@ func UpgradeTroop(username string, payloadType string) bool {
 			var nextTroop Troops
 			DB.Where(&Troops{Type: payloadType, Level: troop.Level + 1}).First(&nextTroop)
 			if nextTroop.ID == 0 {
-				return false
+				return false, "troop already at max level"
 			}
 			if nextTroop.Cost > village.Money {
-				return false
+				return false, "not enough money"
 			}
 			village.Money -= nextTroop.Cost
 			mappings[i].TroopsID = nextTroop.ID
 			DB.Save(&mappings[i])
 			DB.Save(&village)
-			return true
+			return true, ""
 		}
 	}
-	return false
+	return false, "you dont have that troop"
 }
 
-func UpgradeBuilding(username string, buildingID uint) bool {
+func UpgradeBuilding(username string, buildingID uint) (bool, string) {
 	var user User
 	var village Village
 
@@ -356,24 +368,27 @@ func UpgradeBuilding(username string, buildingID uint) bool {
 	var building Building
 	DB.Where(&Building{ID: buildingID}).First(&building)
 	if building.ID == 0 {
-		return false
+		return false, "building not found"
 	}
 
 	var levelSpec LevelSpecific
 	DB.Where(&LevelSpecific{Level: building.Level + 1}).First(&levelSpec)
 
-	if levelSpec.MinVillLevel > village.VillageLevel || levelSpec.UpgCost > village.Money {
-		return false
+	if levelSpec.MinVillLevel > village.VillageLevel {
+		return false, "upgrade your village first"
+	}
+	if levelSpec.UpgCost > village.Money {
+		return false, "not enough money"
 	}
 
 	village.Money -= levelSpec.UpgCost
 	building.Level++
 	DB.Save(&village)
 	DB.Save(&building)
-	return true
+	return true, ""
 }
 
-func CreateBuilding(username string, payloadType string, payloadX int, payloadY int) bool {
+func CreateBuilding(username string, payloadType string, payloadX int, payloadY int) (bool, string) {
 	var user User
 	var village Village
 
@@ -381,7 +396,7 @@ func CreateBuilding(username string, payloadType string, payloadX int, payloadY 
 	DB.Where(&Village{UserID: user.ID}).First(&village)
 
 	if payloadType != "Gold" && payloadType != "Oil" && payloadType != "Farm" && payloadType != "Armoury" && payloadType != "Barrack" {
-		return false
+		return false, "invalid building type"
 	}
 
 	buildings_ex := GetBuildings(username)
@@ -396,15 +411,15 @@ func CreateBuilding(username string, payloadType string, payloadX int, payloadY 
 	for _, b := range buildings_ex {
 		if (payloadX < b.X+b.Width) && (b.X < payloadX+w1) &&
 			(payloadY < b.Y+b.Height) && (b.Y < payloadY+h1) {
-			return false
+			return false, "buildings cant overlap"
 		}
 	}
 	if len(buildings_ex) > LCons[village.VillageLevel].MaxBuildings {
-		return false
+		return false, "building limit reached, upgrade your village"
 	}
 	village.Money = village.Money - LevData.UpgCost
 	if village.Money < 0 {
-		return false
+		return false, "not enough money"
 	}
 	buildingSave := Building{
 		X:            payloadX,
@@ -415,7 +430,7 @@ func CreateBuilding(username string, payloadType string, payloadX int, payloadY 
 	}
 	DB.Save(&village)
 	DB.Save(&buildingSave)
-	return true
+	return true, ""
 }
 
 type RetScoutVillage struct {

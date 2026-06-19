@@ -18,13 +18,13 @@ func UpgradeVillageHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "bad req")
+		fmt.Fprintf(w, "couldnt parse the form, something is wrong with the request")
 		return
 	}
 
-	create := models.UpgradeVillage(username)
-	if create == false {
-		fmt.Fprintf(w, "could not create trop")
+	ok, reason := models.UpgradeVillage(username)
+	if !ok {
+		fmt.Fprintf(w, "upgrade failed: %s", reason)
 		return
 	}
 
@@ -41,19 +41,19 @@ func UpgradeBuildingHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "bad req")
+		fmt.Fprintf(w, "couldnt parse the form, something is wrong with the request")
 		return
 	}
 
 	id, err := strconv.Atoi(r.FormValue("buildingID"))
 	if err != nil {
-		fmt.Fprintf(w, "invalid building")
+		fmt.Fprintf(w, "invalid building id, make sure its a number")
 		return
 	}
 
-	create := models.UpgradeBuilding(username, uint(id))
-	if create == false {
-		fmt.Fprintf(w, "could not create trop")
+	ok, reason := models.UpgradeBuilding(username, uint(id))
+	if !ok {
+		fmt.Fprintf(w, "upgrade failed: %s", reason)
 		return
 	}
 
@@ -70,19 +70,19 @@ func ExtractHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "bad req")
+		fmt.Fprintf(w, "couldnt parse the form, something is wrong with the request")
 		return
 	}
 
 	id, err := strconv.Atoi(r.FormValue("buildingID"))
 	if err != nil {
-		fmt.Fprintf(w, "invalid building")
+		fmt.Fprintf(w, "invalid building id, make sure its a number")
 		return
 	}
 
-	create := models.ExtractResources(username, uint(id))
-	if create == false {
-		fmt.Fprintf(w, "could not create trop")
+	ok, reason := models.ExtractResources(username, uint(id))
+	if !ok {
+		fmt.Fprintf(w, "couldnt collect resources: %s", reason)
 		return
 	}
 

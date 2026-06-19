@@ -30,7 +30,7 @@ type ReturnShop struct {
 func ShopHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("auth_token")
 	if err != nil {
-		fmt.Fprintf(w, "Login First")
+		fmt.Fprintf(w, "you need to login first")
 		return
 	}
 
@@ -53,7 +53,7 @@ func ShopHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseGlob("views/templates/*.html"))
 	err = tmpl.ExecuteTemplate(w, "shop.html", retSho)
 	if err != nil {
-		fmt.Fprintf(w, "could not render template")
+		fmt.Fprintf(w, "could not render the shop page, something went wrong")
 	}
 
 }
@@ -67,7 +67,7 @@ func BuyTroopHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "bad req")
+		fmt.Fprintf(w, "couldnt read the form data")
 		return
 	}
 
@@ -75,13 +75,14 @@ func BuyTroopHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 	level, err := strconv.Atoi(r.FormValue("troop_level"))
 	quantity, e := strconv.Atoi(r.FormValue("quantity"))
 	if troopType == "" || err != nil || e != nil || quantity < 1 {
-		fmt.Fprintf(w, "invalid selction")
+		fmt.Fprintf(w, "invalid troop selection, check the type level and quantity")
 		return
 	}
 
-	create := models.CreateTroop(username, troopType, quantity, level)
-	if create == false {
-		fmt.Fprintf(w, "could not create trop")
+	ok, reason := models.CreateTroop(username, troopType, quantity, level)
+	if !ok {
+		fmt.Fprintf(w, "couldnt buy troops: %s", reason)
+		return
 	}
 
 	w.Header().Set("HX-Redirect", "/web/app/shop")
@@ -97,21 +98,21 @@ func BuyDefenseHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "bad req")
+		fmt.Fprintf(w, "couldnt read the form data")
 		return
 	}
 
 	defenseType := r.FormValue("defense_type")
 	am, err := strconv.Atoi(r.FormValue("amount"))
 	if defenseType == "" || err != nil || am < 1 {
-		fmt.Fprintf(w, "invalid selection")
+		fmt.Fprintf(w, "invalid defense selection, check the type and amount")
 		return
 	}
 
-	create := models.CreateDefense(username, defenseType, am)
-
-	if create == false {
-		fmt.Fprintf(w, "could not create trop")
+	ok, reason := models.CreateDefense(username, defenseType, am)
+	if !ok {
+		fmt.Fprintf(w, "couldnt buy defense: %s", reason)
+		return
 	}
 
 	w.Header().Set("HX-Redirect", "/web/app/shop")
@@ -127,7 +128,7 @@ func BuyBuildingHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "bad req")
+		fmt.Fprintf(w, "couldnt read the form data")
 		return
 	}
 
@@ -135,13 +136,14 @@ func BuyBuildingHandlerHtmx(w http.ResponseWriter, r *http.Request) {
 	x, err := strconv.Atoi(r.FormValue("x"))
 	y, e := strconv.Atoi(r.FormValue("y"))
 	if buildingType == "" || err != nil || e != nil {
-		fmt.Fprintf(w, "invalid selection")
+		fmt.Fprintf(w, "invalid building selection, need a type and valid x y coords")
 		return
 	}
-	create := models.CreateBuilding(username, buildingType, x, y)
 
-	if create == false {
-		fmt.Fprintf(w, "could not create trop")
+	ok, reason := models.CreateBuilding(username, buildingType, x, y)
+	if !ok {
+		fmt.Fprintf(w, "couldnt place building: %s", reason)
+		return
 	}
 
 	w.Header().Set("HX-Redirect", "/web/app/shop")
